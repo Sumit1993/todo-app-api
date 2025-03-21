@@ -22,7 +22,7 @@ Ensure you have the following installed:
 
 ### Install Dependencies
 ```
-cd nestjs-app
+cd todo-app-api
 npm install
 ```
 
@@ -33,7 +33,7 @@ npm run start:dev
 
 ### Deploy to Local Kubernetes (with DevSpace)
 ```
-cd nestjs-app
+cd todo-app-api
 devspace dev
 ```
 

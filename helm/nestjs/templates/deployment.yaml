@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nestjs-app.fullname" . }}
+  name: {{ include "todo-app-api.fullname" . }}
   labels:
-    app: {{ include "nestjs-app.name" . }}
+    app: {{ include "todo-app-api.name" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "nestjs-app.name" . }}
+      app: {{ include "todo-app-api.name" . }}
   template:
     metadata:
       labels:
-        app: {{ include "nestjs-app.name" . }}
+        app: {{ include "todo-app-api.name" . }}
     spec:
       containers:
-        - name: {{ include "nestjs-app.name" . }}
+        - name: {{ include "todo-app-api.name" . }}
           image: "{{ .Values.image.domain }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:

@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "nestjs-app.fullname" . }}-service
+  name: {{ include "todo-app-api.fullname" . }}-service
   labels:
-    app: {{ include "nestjs-app.name" . }}
+    app: {{ include "todo-app-api.name" . }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,4 +12,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: {{ include "nestjs-app.name" . }}
+    app: {{ include "todo-app-api.name" . }}

@@ -16,10 +16,10 @@ export class MetricsMiddleware implements NestMiddleware {
         req.method,
         req.route?.path || req.path,
         res.statusCode,
-        duration
+        duration,
       );
     });
 
     next();
   }
-} 
+}

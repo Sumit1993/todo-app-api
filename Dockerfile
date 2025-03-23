@@ -1,8 +1,8 @@
 # Stage 1: Build
-FROM node:20-alpine AS build
+FROM node:20-alpine as builder
 
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
@@ -10,9 +10,13 @@ RUN npm run build
 # Stage 2: Run
 FROM node:20-alpine
 WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY package.json package-lock.json ./
-RUN npm install --only=prod
+COPY --from=builder /app/package*.json ./
+RUN npm install --production && \
+    mkdir -p /app/logs && \
+    chown -R node:node /app
+COPY --from=builder /app/dist ./dist
+USER node
 
 EXPOSE 3000
+ENV NODE_ENV=production
 CMD ["node", "dist/main.js"]

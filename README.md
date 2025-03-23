@@ -26,6 +26,21 @@ cd todo-app-api
 npm install
 ```
 
+### Environment Setup
+The application uses environment variables for configuration. For local development:
+
+1. Copy the example environment file:
+```
+cp .env.example .env
+```
+
+2. Edit the `.env` file with your preferred settings. By default, it's configured for local development.
+
+For local metrics monitoring, you need to:
+1. Set `METRICS_PROVIDER=local` in your `.env` file
+2. Set `LOCAL_PUSHGATEWAY_URL=http://localhost:9091/metrics/job/todo-api` (assuming you're running local monitoring)
+3. Make sure you have the local monitoring stack running (see the todo-app-ops repository)
+
 ### Run Locally
 ```
 npm run start:dev
@@ -36,6 +51,9 @@ npm run start:dev
 cd todo-app-api
 devspace dev
 ```
+
+### Cloud Deployment
+For deploying to cloud services like Render, see [CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md).
 
 ### API Endpoints
 The NestJS service exposes the following endpoints:
@@ -57,3 +75,14 @@ To debug in VS Code, use the included `launch.json` and start the **Attach to Ne
 
 ## Monitoring
 The service is instrumented with Prometheus, which collects performance metrics for monitoring.
+
+### Metrics Providers
+The service supports two monitoring configurations:
+
+1. **Local Monitoring** - Uses a local Prometheus pushgateway
+   - Set `METRICS_PROVIDER=local` and `LOCAL_PUSHGATEWAY_URL` in `.env`
+   - Works with the local monitoring setup in todo-app-ops
+
+2. **Grafana Cloud** - Used for cloud deployments
+   - Set `METRICS_PROVIDER=grafana` and appropriate Grafana Cloud credentials
+   - Used automatically when deployed to Render

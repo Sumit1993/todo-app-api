@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: todo-app-api
+    runtime: node
+    region: ohio
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: METRICS_PROVIDER
+        value: grafana
+      - key: GRAFANA_PUSH_URL
+        sync: false
+      - key: GRAFANA_LOKI_URL
+        sync: false
+      - key: GRAFANA_API_KEY
+        sync: false
+      - key: GRAFANA_USERNAME
+        sync: false
+      - key: GRAFANA_PASSWORD
+        sync: false
+      - key: PORT
+        value: 10000 

@@ -5,15 +5,12 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import * as promClient from 'prom-client';
-import axios from 'axios';
 
 @Injectable()
 export class MetricsService implements OnModuleInit, OnModuleDestroy {
   private readonly register: promClient.Registry;
   private readonly httpRequestDuration: promClient.Histogram;
   private readonly httpRequestsTotal: promClient.Counter;
-  private pushgatewayUrl: string | null = null;
-  private pushInterval: NodeJS.Timeout | null = null;
   private readonly logger = new Logger(MetricsService.name);
 
   constructor() {
@@ -37,110 +34,15 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
       registers: [this.register],
     });
 
-    // Configure metrics push based on environment
-    this.configurePushgateway();
-  }
-
-  private configurePushgateway() {
-    // For cloud deployment with Grafana Cloud
-    if (
-      process.env.METRICS_PROVIDER === 'grafana' &&
-      process.env.GRAFANA_PUSH_URL
-    ) {
-      this.pushgatewayUrl = process.env.GRAFANA_PUSH_URL;
-      this.logger.log('Configured for Grafana Cloud metrics push');
-    }
-    // For local development with local Prometheus
-    else if (
-      process.env.METRICS_PROVIDER === 'local' &&
-      process.env.LOCAL_PUSHGATEWAY_URL
-    ) {
-      this.pushgatewayUrl = process.env.LOCAL_PUSHGATEWAY_URL;
-      this.logger.log('Configured for local Prometheus pushgateway');
-    }
-    // No metrics push configured
-    else {
-      this.logger.log(
-        'No metrics push configured - running in metrics collection only mode',
-      );
-    }
+    this.logger.log('Metrics service initialized for Prometheus scraping');
   }
 
   onModuleInit() {
-    // Setup push to Grafana Cloud if configured with authentication
-    if (
-      this.pushgatewayUrl &&
-      process.env.METRICS_PROVIDER === 'grafana' &&
-      process.env.GRAFANA_USERNAME &&
-      process.env.GRAFANA_PASSWORD
-    ) {
-      this.setupGrafanaPush();
-    }
-    // Setup push to local Prometheus pushgateway (no auth required)
-    else if (this.pushgatewayUrl && process.env.METRICS_PROVIDER === 'local') {
-      this.setupLocalPush();
-    }
+    this.logger.log('Metrics endpoint available at /metrics');
   }
 
   onModuleDestroy() {
-    this.stopSetInterval();
-  }
-
-  private setupGrafanaPush() {
-    this.pushInterval = setInterval(() => {
-      this.pushMetricsToGrafana();
-    }, 15000);
-  }
-
-  private async pushMetricsToGrafana() {
-    try {
-      if (this.pushgatewayUrl) {
-        const metrics = await this.register.metrics();
-        await axios.post(this.pushgatewayUrl, metrics, {
-          headers: {
-            'Content-Type': 'text/plain',
-            Authorization:
-              'Basic ' +
-              Buffer.from(
-                `${process.env.GRAFANA_USERNAME}:${process.env.GRAFANA_PASSWORD}`,
-              ).toString('base64'),
-          },
-        });
-        this.logger.debug('Metrics pushed to Grafana Cloud');
-      }
-    } catch (error) {
-      this.logger.error('Error pushing metrics to Grafana Cloud:', error);
-    }
-  }
-
-  // Optional: Cleanup on service destruction
-  public stopSetInterval() {
-    if (this.pushInterval) {
-      clearInterval(this.pushInterval);
-    }
-  }
-
-  private setupLocalPush() {
-    // Push metrics every 15 seconds to local Prometheus pushgateway
-    this.pushInterval = setInterval(() => {
-      this.pushMetricsToLocal();
-    }, 15000);
-  }
-
-  private async pushMetricsToLocal() {
-    try {
-      if (this.pushgatewayUrl) {
-        const metrics = await this.register.metrics();
-        await axios.post(this.pushgatewayUrl, metrics, {
-          headers: {
-            'Content-Type': 'text/plain',
-          },
-        });
-        this.logger.debug('Metrics pushed to local Prometheus pushgateway');
-      }
-    } catch (error) {
-      this.logger.error('Error pushing metrics to local Prometheus:', error);
-    }
+    // Clean up resources if needed
   }
 
   getMetrics(): Promise<string> {

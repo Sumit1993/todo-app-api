@@ -1,8 +1,0 @@
-containers:
-  - name: {{ .Chart.Name }}
-    image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-    imagePullPolicy: {{ .Values.image.pullPolicy }}
-    env:
-      - name: ES_URL
-        value: "http://logging-elasticsearch-master:9200"
-    // ... rest of the configuration ... 

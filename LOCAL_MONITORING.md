@@ -4,12 +4,7 @@ This guide explains how to set up and use local monitoring for the Todo App API 
 
 ## Overview
 
-The Todo App supports two monitoring configurations:
-
-1. **Local Monitoring** - For local development using Prometheus, Grafana, and Pushgateway
-2. **Grafana Cloud** - For cloud deployment (configured automatically on Render)
-
-This guide focuses on the local monitoring setup.
+The Todo App uses Prometheus for monitoring metrics during both local development and when deployed to the cloud. For logging, we use file-based logs locally and Grafana Loki when deployed to the cloud.
 
 ## Prerequisites
 
@@ -31,8 +26,44 @@ This guide focuses on the local monitoring setup.
 This starts:
 - **Prometheus** - Metrics database (accessible at http://localhost:9090)
 - **Grafana** - Visualization platform (accessible at http://localhost:3030)
-- **Pushgateway** - Metrics push receiver (used by the API service)
-- **Loki** - Log aggregator
+- **Loki** - Log aggregator (can be used for local log viewing)
+
+## Configuring Prometheus to Scrape the API
+
+Prometheus needs to be configured to scrape metrics from the Todo API's `/metrics` endpoint. The API exposes a metrics endpoint at:
+
+- Local development: `http://localhost:3000/api/metrics`
+- When using Docker: `http://todo-api:3000/api/metrics` 
+
+Update your Prometheus configuration in the todo-app-ops repository:
+
+1. Edit the Prometheus configuration file:
+   ```
+   cd ../todo-app-ops/helm/monitoring
+   ```
+
+2. Make sure your scrape_configs section includes a job for the todo-api:
+   ```yaml
+   scrape_configs:
+     - job_name: 'todo-api'
+       metrics_path: '/api/metrics'
+       scrape_interval: 15s
+       static_configs:
+         - targets: ['localhost:3000']  # For local development
+   ```
+
+3. For Kubernetes, use appropriate service discovery:
+   ```yaml
+   scrape_configs:
+     - job_name: 'todo-api'
+       metrics_path: '/api/metrics'
+       kubernetes_sd_configs:
+         - role: endpoints
+       relabel_configs:
+         - source_labels: [__meta_kubernetes_service_name]
+           action: keep
+           regex: todo-app-api
+   ```
 
 ## Configuring the Todo App API
 
@@ -41,15 +72,14 @@ This starts:
    cp .env.example .env
    ```
 
-2. Make sure the following settings are configured in your `.env`:
-   ```
-   METRICS_PROVIDER=local
-   LOCAL_PUSHGATEWAY_URL=http://localhost:9091/metrics/job/todo-api
-   ```
-
-3. Start the API service:
+2. Start the API service:
    ```
    npm run start:dev
+   ```
+
+3. Verify the metrics endpoint is accessible at:
+   ```
+   http://localhost:3000/api/metrics
    ```
 
 ## Accessing Monitoring Dashboards
@@ -64,25 +94,17 @@ This starts:
 ## Troubleshooting
 
 - **Metrics not showing up?** Check:
-  - Is the Pushgateway running? Visit http://localhost:9091
-  - Is the API service running with the correct environment variables?
-  - Check the API logs for any errors related to metrics pushing
+  - Is Prometheus configured to scrape your API's metrics endpoint?
+  - Is the API service running and exposing the `/api/metrics` endpoint?
+  - Check the API logs for any errors related to metrics
 
 - **Logs not appearing?** Local monitoring uses file-based logs:
   - Check the `logs/application.log` file in the API service directory
 
-## Switching to Grafana Cloud
+## Cloud Deployment
 
-When you're ready to deploy to the cloud:
+When deploying to Render, you'll need to:
 
-1. Change your environment configuration to use Grafana Cloud:
-   ```
-   METRICS_PROVIDER=grafana
-   GRAFANA_PUSH_URL=your-grafana-cloud-url
-   GRAFANA_LOKI_URL=your-grafana-loki-url
-   GRAFANA_API_KEY=your-grafana-api-key
-   GRAFANA_USERNAME=your-grafana-username
-   GRAFANA_PASSWORD=your-grafana-password
-   ```
-
-2. These variables are already configured in the Render deployment configuration. 
+1. Ensure your external Prometheus can reach the API's metrics endpoint
+2. Configure Prometheus to scrape the deployed API at: `https://your-render-api-url/api/metrics`
+3. The API uses Grafana Loki for centralized logging (requires GRAFANA_LOKI_URL and GRAFANA_API_KEY) 

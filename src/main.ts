@@ -15,7 +15,6 @@ class LokiTransport extends TransportStream {
   private auth: string;
   private labels: Record<string, string>;
   private buffer: any[] = [];
-  private flushInterval: NodeJS.Timeout | null = null;
   private readonly FLUSH_INTERVAL_MS = 5000; // 5 seconds
 
   constructor(opts?: any) {
@@ -23,11 +22,6 @@ class LokiTransport extends TransportStream {
     this.url = opts?.url || '';
     this.auth = opts?.auth || '';
     this.labels = opts?.labels || { app: 'todo-app-api' };
-
-    // Start the flush interval
-    this.flushInterval = setInterval(() => {
-      this.flush();
-    }, this.FLUSH_INTERVAL_MS);
   }
 
   log(info: any, callback: () => void) {
@@ -112,12 +106,8 @@ async function bootstrap() {
     );
   }
 
-  // Add Grafana Loki transport if using Grafana Cloud
-  if (
-    process.env.METRICS_PROVIDER === 'grafana' &&
-    process.env.GRAFANA_LOKI_URL &&
-    process.env.GRAFANA_API_KEY
-  ) {
+  // Add Grafana Loki transport if configured
+  if (process.env.GRAFANA_LOKI_URL && process.env.GRAFANA_API_KEY) {
     transports.push(
       new LokiTransport({
         url: process.env.GRAFANA_LOKI_URL,
@@ -140,12 +130,26 @@ async function bootstrap() {
     logger: logger,
   });
 
-  // Enable CORS for frontend access
-  app.enableCors({
-    origin: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
-  });
+  // Enable CORS for frontend access with enhanced security in production
+  if (process.env.NODE_ENV === 'production') {
+    // In production, restrict to specific origins
+    app.enableCors({
+      origin: process.env.FRONTEND_URL || 'https://todo-app.vercel.app',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+      maxAge: 86400, // 24 hours
+    });
+
+    // Set global prefix in production cause on local niginx takes care of prefix
+    app.setGlobalPrefix('api');
+  } else {
+    // In development, allow all origins
+    app.enableCors({
+      origin: true,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+    });
+  }
 
   await app.listen(process.env.PORT || 3000);
 }

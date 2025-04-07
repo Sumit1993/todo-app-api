@@ -10,17 +10,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: METRICS_PROVIDER
-        value: grafana
-      - key: GRAFANA_PUSH_URL
-        sync: false
       - key: GRAFANA_LOKI_URL
         sync: false
       - key: GRAFANA_API_KEY
-        sync: false
-      - key: GRAFANA_USERNAME
-        sync: false
-      - key: GRAFANA_PASSWORD
         sync: false
       - key: PORT
         value: 10000 

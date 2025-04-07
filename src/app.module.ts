@@ -3,12 +3,21 @@ import { TodosModule } from './todos/todos.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { MetricsMiddleware } from './metrics/metrics.middleware';
 import { IssuesModule } from './issues/issues.module';
+import { SecurityModule } from './security/security.module';
+import { SecurityMiddleware } from './security/security.middleware';
+import { HealthModule } from './health/health.module';
 
 @Module({
-  imports: [TodosModule, MetricsModule, IssuesModule],
+  imports: [
+    TodosModule,
+    MetricsModule,
+    IssuesModule,
+    SecurityModule,
+    HealthModule,
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(MetricsMiddleware).forRoutes('*');
+    consumer.apply(MetricsMiddleware, SecurityMiddleware).forRoutes('*');
   }
 }

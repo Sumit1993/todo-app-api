@@ -16,7 +16,7 @@ const structuredFormat = winston.format.combine(
       environment: process.env.NODE_ENV || 'development',
       pid: process.pid,
       correlationId: meta.correlationId || 'unknown',
-      ...meta
+      ...meta,
     };
 
     // Add stack trace for errors
@@ -31,42 +31,51 @@ const structuredFormat = winston.format.combine(
       logEntry.memoryUsage = {
         heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
         heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
-        external: Math.round(memUsage.external / 1024 / 1024)
+        external: Math.round(memUsage.external / 1024 / 1024),
       };
     }
 
     return JSON.stringify(logEntry);
-  })
+  }),
 );
 
 // Console format for development readability
 const consoleFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.colorize(),
-  winston.format.printf(({ timestamp, level, message, correlationId, ...meta }) => {
-    const correlation = correlationId ? `[${correlationId.slice(0, 8)}]` : '';
-    const metaStr = Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
-    return `${timestamp} ${level}: ${correlation} ${message}${metaStr}`;
-  })
+  winston.format.printf(
+    ({ timestamp, level, message, correlationId, ...meta }) => {
+      const correlation =
+        typeof correlationId === 'string'
+          ? `[${correlationId.slice(0, 8)}]`
+          : '';
+      const metaStr =
+        Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
+      return `${timestamp} ${level}: ${correlation} ${message}${metaStr}`;
+    },
+  ),
 );
 
 export const logger = WinstonModule.createLogger({
   transports: [
     new winston.transports.Console({
-      format: process.env.NODE_ENV === 'production' ? structuredFormat : consoleFormat,
+      format:
+        process.env.NODE_ENV === 'production'
+          ? structuredFormat
+          : consoleFormat,
     }),
     // File transport for persistent structured logs
     new winston.transports.File({
       filename: 'logs/application.log',
       format: structuredFormat,
-      level: 'info'
+      level: 'info',
     }),
     // Separate error log file
     new winston.transports.File({
       filename: 'logs/error.log',
       format: structuredFormat,
-      level: 'error'
-    })
+      level: 'error',
+    }),
   ],
 });
 
@@ -90,22 +99,24 @@ export class ContextLogger {
       message,
       context: this.context,
       correlationId: this.correlationId,
-      ...meta
+      ...meta,
     };
   }
 
   log(message: string, meta?: any) {
-    logger.info(this.formatMessage(message, meta));
+    logger.log(this.formatMessage(message, meta));
   }
 
   error(message: string, error?: Error, meta?: any) {
-    const errorMeta = error ? {
-      errorName: error.name,
-      errorMessage: error.message,
-      stack: error.stack,
-      ...meta
-    } : meta;
-    
+    const errorMeta = error
+      ? {
+          errorName: error.name,
+          errorMessage: error.message,
+          stack: error.stack,
+          ...meta,
+        }
+      : meta;
+
     logger.error(this.formatMessage(message, errorMeta));
   }
 
@@ -114,7 +125,9 @@ export class ContextLogger {
   }
 
   debug(message: string, meta?: any) {
-    logger.debug(this.formatMessage(message, meta));
+    if (logger && typeof logger.debug === 'function') {
+      logger.debug(this.formatMessage(message, meta));
+    }
   }
 
   // Log performance metrics
@@ -123,18 +136,23 @@ export class ContextLogger {
       operation,
       duration,
       performanceType: 'timing',
-      ...meta
+      ...meta,
     });
   }
 
   // Log database operations (for future use)
-  logDatabaseOperation(operation: string, table: string, duration?: number, meta?: any) {
+  logDatabaseOperation(
+    operation: string,
+    table: string,
+    duration?: number,
+    meta?: any,
+  ) {
     this.log(`Database: ${operation} on ${table}`, {
       operation,
       table,
       duration,
       operationType: 'database',
-      ...meta
+      ...meta,
     });
   }
 }

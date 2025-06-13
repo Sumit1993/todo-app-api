@@ -20,7 +20,9 @@ export class IssuesController {
     'unauthorized',
     'forbidden',
     'bad-request',
+    'memory-leak',
   ];
+  private memoryLeakData: any[] = [];
 
   constructor(private readonly issuesService: IssuesService) {}
 
@@ -98,6 +100,26 @@ export class IssuesController {
           HttpStatus.BAD_REQUEST,
         );
 
+      case 'memory-leak':
+        this.logger.warn('Simulating memory leak - allocating large arrays');
+        // Allocate 10MB of data each time
+        const largeData = new Array(10 * 1024 * 1024).fill('memory-leak-data');
+        this.memoryLeakData.push(largeData);
+        
+        const currentMemoryUsage = process.memoryUsage();
+        this.logger.warn(`Memory leak simulation: Current heap used: ${Math.round(currentMemoryUsage.heapUsed / 1024 / 1024)}MB, Arrays stored: ${this.memoryLeakData.length}`);
+        
+        return {
+          status: 'success',
+          message: `Memory leak simulated. Allocated ${this.memoryLeakData.length * 10}MB total. Current heap: ${Math.round(currentMemoryUsage.heapUsed / 1024 / 1024)}MB`,
+          memoryStats: {
+            heapUsed: Math.round(currentMemoryUsage.heapUsed / 1024 / 1024),
+            heapTotal: Math.round(currentMemoryUsage.heapTotal / 1024 / 1024),
+            external: Math.round(currentMemoryUsage.external / 1024 / 1024),
+            arraysAllocated: this.memoryLeakData.length
+          }
+        };
+
       default:
         return {
           status: 'warning',
@@ -116,6 +138,32 @@ export class IssuesController {
       status: 'success',
       message:
         'Service down simulation triggered (simulated only, service remains available)',
+    };
+  }
+
+  @Post('clear-memory-leak')
+  @HttpCode(HttpStatus.OK)
+  clearMemoryLeak() {
+    const beforeClear = this.memoryLeakData.length;
+    this.memoryLeakData = [];
+    
+    // Force garbage collection if available (requires --expose-gc flag)
+    if ((global as any).gc) {
+      (global as any).gc();
+    }
+    
+    const currentMemoryUsage = process.memoryUsage();
+    this.logger.log(`Memory leak cleared. Released ${beforeClear} arrays. Current heap: ${Math.round(currentMemoryUsage.heapUsed / 1024 / 1024)}MB`);
+    
+    return {
+      status: 'success',
+      message: `Memory leak cleared. Released ${beforeClear} arrays (${beforeClear * 10}MB)`,
+      memoryStats: {
+        heapUsed: Math.round(currentMemoryUsage.heapUsed / 1024 / 1024),
+        heapTotal: Math.round(currentMemoryUsage.heapTotal / 1024 / 1024),
+        external: Math.round(currentMemoryUsage.external / 1024 / 1024),
+        arraysCleared: beforeClear
+      }
     };
   }
 }

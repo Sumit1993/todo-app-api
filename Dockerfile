@@ -11,7 +11,7 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /app/package*.json ./
-RUN npm install --production && \
+RUN npm install --omit=dev && \
     mkdir -p /app/logs && \
     chown -R node:node /app
 COPY --from=builder /app/dist ./dist

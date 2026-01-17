@@ -30,7 +30,7 @@ The Todo application includes several security measures for cloud deployment:
 
 3. **Rate Limiting**:
    - Basic rate limiting to prevent abuse
-   - More restrictive limits on issue simulation endpoints
+   - Configurable limits per endpoint
 
 4. **CSRF Protection**:
    - Verifies origin/referer headers in production

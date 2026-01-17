@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
@@ -19,22 +18,13 @@ export class TodosController {
 
   @Get()
   async getTodos() {
-    // 20% chance to simulate a server error
-    if (Math.random() < 0.2) {
-      this.logger.error('Simulated Random Server Error');
-      throw new InternalServerErrorException('Random Server Error');
-    }
+    this.logger.log('Fetching all todos');
     return this.todosService.getTodos();
   }
 
   @Post()
   async addTodo(@Body('todo') todo: string, @Body('userId') userId: number) {
-    // Simulate a random delay
-    if (Math.random() < 0.3) {
-      const delay = Math.floor(Math.random() * 5000) + 1000; // 1 to 5 seconds delay
-      this.logger.warn(`Simulated delay of ${delay}ms in addTodo`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
+    this.logger.log(`Creating todo for user ${userId}`);
     return this.todosService.addTodo(todo, userId);
   }
 
@@ -43,24 +33,13 @@ export class TodosController {
     @Param('id') id: number,
     @Body('completed') completed: boolean,
   ) {
-    // Simulate a random error
-    if (Math.random() < 0.1) {
-      this.logger.error('Simulated Error in toggleTodoStatus');
-      throw new InternalServerErrorException(
-        'Simulated Error in toggleTodoStatus',
-      );
-    }
+    this.logger.log(`Toggling todo ${id} status`);
     return this.todosService.toggleTodoStatus(id, completed);
   }
 
   @Delete(':id')
   async deleteTodo(@Param('id') id: number) {
-    // Simulate a random timeout
-    if (Math.random() < 0.2) {
-      const timeout = Math.floor(Math.random() * 3000) + 1000; // 1 to 3 seconds timeout
-      this.logger.warn(`Simulated timeout of ${timeout}ms in deleteTodo`);
-      await new Promise((resolve) => setTimeout(resolve, timeout));
-    }
+    this.logger.log(`Deleting todo ${id}`);
     return this.todosService.deleteTodo(id);
   }
 }

@@ -24,7 +24,7 @@ All query parameters are automatically sanitized to prevent injection attacks:
 
 A basic in-memory rate limiting implementation that:
 - Tracks requests per IP address and endpoint
-- Uses different limits for regular endpoints (100 requests/minute) vs. issue simulator endpoints (10 requests/minute)
+- Default limit of 100 requests per minute per IP
 - Returns 429 Too Many Requests when limits are exceeded
 
 ### CSRF Protection

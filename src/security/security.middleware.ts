@@ -94,7 +94,7 @@ export class SecurityMiddleware implements NestMiddleware {
     const key = `${ip}:${path}`;
     const now = Date.now();
     const windowMs = 60 * 1000; // 1 minute window
-    const maxRequests = path.includes('/issues/') ? 10 : 100; // Lower limit for issue simulator
+    const maxRequests = 100; // requests per minute per IP
 
     if (!this.requestCounts[key]) {
       this.requestCounts[key] = { count: 1, timestamp: now };

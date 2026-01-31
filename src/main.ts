@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import {
   WinstonModule,
@@ -134,6 +135,13 @@ async function bootstrap() {
   if (process.env.NODE_ENV === 'production') {
     // In production, restrict to specific origins
     app.enableCors({
+  
+  // Enable validation for all endpoints
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: false, // Handle type conversion manually in service layer
+  }));
       origin: process.env.FRONTEND_URL || 'https://todo-app.vercel.app',
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       credentials: true,
@@ -145,6 +153,13 @@ async function bootstrap() {
   } else {
     // In development, allow all origins
     app.enableCors({
+  
+  // Enable validation for all endpoints
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: false, // Handle type conversion manually in service layer
+  }));
       origin: true,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       credentials: true,

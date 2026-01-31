@@ -135,13 +135,6 @@ async function bootstrap() {
   if (process.env.NODE_ENV === 'production') {
     // In production, restrict to specific origins
     app.enableCors({
-  
-  // Enable validation for all endpoints
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: false, // Handle type conversion manually in service layer
-  }));
       origin: process.env.FRONTEND_URL || 'https://todo-app.vercel.app',
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       credentials: true,
@@ -153,18 +146,18 @@ async function bootstrap() {
   } else {
     // In development, allow all origins
     app.enableCors({
-  
+      origin: true,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+    });
+  }
+
   // Enable validation for all endpoints
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: false, // Handle type conversion manually in service layer
   }));
-      origin: true,
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-      credentials: true,
-    });
-  }
 
   await app.listen(process.env.PORT || 3000);
 }

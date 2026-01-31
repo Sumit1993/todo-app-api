@@ -6,25 +6,27 @@ import {
   Delete,
   Param,
   Body,
-  Logger,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
+import { ContextLogger } from '../logger';
 
 @Controller('todos')
 export class TodosController {
-  private readonly logger = new Logger(TodosController.name);
-
   constructor(private readonly todosService: TodosService) {}
 
   @Get()
   async getTodos() {
-    this.logger.log('Fetching all todos');
-    return this.todosService.getTodos();
+    const logger = new ContextLogger('TodosController');
+    logger.log('GET /todos - Fetching all todos');
+    const result = await this.todosService.getTodos();
+    logger.log('GET /todos - Completed', { count: result?.todos?.length || 0 });
+    return result;
   }
 
   @Post()
   async addTodo(@Body('todo') todo: string, @Body('userId') userId: number) {
-    this.logger.log(`Creating todo for user ${userId}`);
+    const logger = new ContextLogger('TodosController');
+    logger.log('POST /todos - Creating new todo', { userId });
     return this.todosService.addTodo(todo, userId);
   }
 
@@ -33,13 +35,15 @@ export class TodosController {
     @Param('id') id: number,
     @Body('completed') completed: boolean,
   ) {
-    this.logger.log(`Toggling todo ${id} status`);
+    const logger = new ContextLogger('TodosController');
+    logger.log(`PATCH /todos/${id} - Toggling status`, { completed });
     return this.todosService.toggleTodoStatus(id, completed);
   }
 
   @Delete(':id')
   async deleteTodo(@Param('id') id: number) {
-    this.logger.log(`Deleting todo ${id}`);
+    const logger = new ContextLogger('TodosController');
+    logger.log(`DELETE /todos/${id} - Deleting todo`);
     return this.todosService.deleteTodo(id);
   }
 }

@@ -1,15 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ContextLogger } from '../logger';
+import { RequestCache } from '../cache/request-cache';
 
 @Injectable()
-export class TodosService {
+export class TodosService implements OnModuleDestroy {
   // Note: Each service instance gets its own logger for encapsulation
   private readonly logger = new ContextLogger('TodosService');
+  private readonly cache = new RequestCache(30000);
 
   constructor(private readonly httpService: HttpService) {}
 
   async getTodos() {
+    const cached = this.cache.get('todos');
+    if (cached) {
+      this.logger.log('Returning cached todos');
+      return cached;
+    }
+
     this.logger.log('Fetching todos from external API');
     const startTime = Date.now();
 
@@ -22,6 +30,7 @@ export class TodosService {
         count: response.data?.todos?.length || 0,
       });
 
+      this.cache.set('todos', response.data);
       return response.data;
     } catch (error) {
       this.logger.error('Failed to fetch todos', error as Error);
@@ -36,6 +45,8 @@ export class TodosService {
       'https://dummyjson.com/todos/add',
       { todo, completed: false, userId },
     );
+
+    this.cache.invalidate('todos');
     return response.data;
   }
 
@@ -46,6 +57,8 @@ export class TodosService {
       `https://dummyjson.com/todos/${id}`,
       { completed },
     );
+
+    this.cache.invalidate('todos');
     return response.data;
   }
 
@@ -55,6 +68,12 @@ export class TodosService {
     const response = await this.httpService.axiosRef.delete(
       `https://dummyjson.com/todos/${id}`,
     );
+
+    this.cache.invalidate('todos');
     return response.data;
+  }
+
+  onModuleDestroy() {
+    this.cache.destroy();
   }
 }

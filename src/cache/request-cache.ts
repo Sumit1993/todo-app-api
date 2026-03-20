@@ -6,11 +6,13 @@ interface CacheEntry<T> {
 export class RequestCache<T = unknown> {
   private cache = new Map<string, CacheEntry<T>>();
   private readonly ttl: number;
+  private readonly cleanupIntervalMs: number;
   private cleanupInterval: ReturnType<typeof setInterval>;
 
   constructor(ttlMs: number = 30000, cleanupIntervalMs: number = 60000) {
     this.ttl = ttlMs;
-    this.cleanupInterval = setInterval(() => this.cleanup(), cleanupIntervalMs);
+    this.cleanupIntervalMs = cleanupIntervalMs;
+    this.cleanupInterval = this.startCleanupTimer();
   }
 
   get(key: string): T | null {
@@ -43,18 +45,27 @@ export class RequestCache<T = unknown> {
     this.cache.clear();
   }
 
+  reset(): void {
+    const oldCache = this.cache;
+    this.cache = new Map<string, CacheEntry<T>>();
+    oldCache.clear();
+  }
+
   get size(): number {
     return this.cache.size;
   }
 
-  private cleanup(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp <= this.ttl) {
-        continue;
+  private startCleanupTimer(): ReturnType<typeof setInterval> {
+    const cache = this.cache;
+    return setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of cache.entries()) {
+        if (now - entry.timestamp <= this.ttl) {
+          continue;
+        }
+        cache.delete(key);
       }
-      this.cache.delete(key);
-    }
+    }, this.cleanupIntervalMs);
   }
 
   destroy(): void {

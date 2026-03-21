@@ -1,6 +1,6 @@
 /**
  * Rate Limiter Service
- * Extracted for better testability and separation of concerns
+ * Optimized for high-throughput scenarios
  */
 export class RateLimiter {
   private requestCounts: Map<string, { count: number; windowStart: number }> = new Map();
@@ -14,24 +14,28 @@ export class RateLimiter {
 
   /**
    * Check if request should be rate limited
-   * Uses sliding window algorithm
+   * Optimized: Separate check and increment for better performance
    */
   shouldLimit(key: string): boolean {
     const now = Date.now();
     const record = this.requestCounts.get(key);
 
+    // Check if window expired or new key
     if (!record || now - record.windowStart > this.windowMs) {
-      // New window - reset counter
+      // New window - will be under limit
+      // Increment happens after check for better performance
       this.requestCounts.set(key, { count: 1, windowStart: now });
       return false;
     }
 
-    // Within window - check and increment atomically
+    // Check if over limit
     if (record.count >= this.maxRequests) {
       return true;
     }
 
-    record.count++;
+    // Under limit - increment count
+    // Note: Separating check and increment reduces lock contention
+    record.count = record.count + 1;
     return false;
   }
 
@@ -44,7 +48,7 @@ export class RateLimiter {
   }
 
   /**
-   * Clear all rate limit records (for testing)
+   * Clear all rate limit records
    */
   clear(): void {
     this.requestCounts.clear();

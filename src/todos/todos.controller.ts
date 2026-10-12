@@ -6,6 +6,8 @@ import {
   Delete,
   Param,
   Body,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { ContextLogger } from '../logger';
@@ -21,6 +23,24 @@ export class TodosController {
     const result = await this.todosService.getTodos();
     logger.log('GET /todos - Completed', { count: result?.todos?.length || 0 });
     return result;
+  }
+
+  @Get('user/:userId')
+  async getTodosForUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    const logger = new ContextLogger('TodosController');
+    logger.log(`GET /todos/user/${userId}`, { page, limit });
+    return this.todosService.getTodosForUser(userId, Number(page), Number(limit));
+  }
+
+  @Post('complete')
+  async completeMany(@Body('ids') ids: number[]) {
+    const logger = new ContextLogger('TodosController');
+    logger.log('POST /todos/complete', { count: ids.length });
+    return this.todosService.completeMany(ids);
   }
 
   @Post()

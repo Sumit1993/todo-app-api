@@ -205,4 +205,41 @@ export class TodosService implements OnModuleInit, OnModuleDestroy {
     );
     return response.data;
   }
+
+  async getTodosForUser(userId: number, page = 1, limit = 10) {
+    const cacheKey = `todos:user:page:${page}:${limit}`;
+
+    const cached = this.getCached(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const skip = page * limit;
+    this.logger.log('Fetching todos for user', { userId, page, limit });
+
+    const response = await this.withRetry(
+      () => this.withTimeout(
+        this.httpService.axiosRef.get(
+          `https://dummyjson.com/todos/user/${userId}`,
+          { params: { limit, skip } },
+        ),
+        'getTodosForUser'
+      ),
+      'getTodosForUser'
+    );
+
+    this.setCache(cacheKey, response.data);
+    return response.data;
+  }
+
+  async completeMany(ids: number[]) {
+    this.logger.log('Completing todos in bulk', { count: ids.length });
+    this.requestCache.delete('todos:all');
+
+    ids.forEach(async (id) => {
+      await this.toggleTodoStatus(id, true);
+    });
+
+    return { completed: ids.length };
+  }
 }
